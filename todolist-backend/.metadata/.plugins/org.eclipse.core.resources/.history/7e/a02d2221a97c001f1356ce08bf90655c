@@ -1,0 +1,71 @@
+package com.task.service
+
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.task.dto.TaskDto;
+import com.task.entity.Tasks;
+import com.task.repository.TaskRepository;
+
+@Service
+public class TaskServiceImpl {
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+    private TaskDto convertToDTO(Tasks task) {
+        return new TaskDto(
+                task.getId(),
+                task.getTitle(),
+                task.getDescription(),
+                task.getCreatedAt(),
+                task.getUpdatedAt()
+        );
+    }
+
+    private Tasks convertToEntity(TaskDto taskDTO) {
+        Tasks task = new Tasks();
+        task.setTitle(taskDTO.getTitle());
+        task.setDescription(taskDTO.getDescription());
+        return task;
+    }
+
+    public List<TaskDto> getAllTasks() {
+        return taskRepository.findAll()
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<TaskDto> getTaskById(Long id) {
+        return taskRepository.findById(id).map(this::convertToDTO);
+    }
+
+    public TaskDto createTask(TaskDto taskDTO) {
+        Tasks task = convertToEntity(taskDTO);
+        Tasks savedTask = taskRepository.save(task);
+        return convertToDTO(savedTask);
+    }
+
+    public TaskDto updateTask(Long id, TaskDTO taskDetails) {
+        Tasks task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+
+        task.setTitle(taskDetails.getTitle());
+        task.setDescription(taskDetails.getDescription());
+
+        Task updatedTask = taskRepository.save(task);
+        return convertToDTO(updatedTask);
+    }
+
+    public void deleteTask(Long id) {
+        Task task = taskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+        taskRepository.delete(task);
+    }
+}
